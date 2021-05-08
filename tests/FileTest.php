@@ -2,6 +2,7 @@
 
 namespace fileforatk\tests;
 
+use Atk4\Data\Exception;
 use fileforatk\File;
 use traitsforatkdata\TestCase;
 
@@ -71,7 +72,7 @@ class FileTest extends TestCase
     {
         $f = new File($this->persistence);
         $f->set('value', 'FDFLKSD LFSDHF KSJB');
-        self::expectException(\Atk4\Data\Exception::class);
+        self::expectException(Exception::class);
         $f->save();
     }
 
