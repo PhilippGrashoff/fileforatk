@@ -15,6 +15,23 @@ class FileTest extends TestCase
         File::class
     ];
 
+    public static function setUpBeforeClass(): void
+    {
+        parent::setUpBeforeClass();
+        define('FILE_BASE_PATH', __DIR__ . DIRECTORY_SEPARATOR);
+        define('SAVE_FILES_IN', 'filedir');
+    }
+
+    public static function tearDownAfterClass(): void
+    {
+        parent::tearDownAfterClass();
+        foreach ((new \DirectoryIterator(__DIR__ . DIRECTORY_SEPARATOR . 'filedir')) as $file) {
+            if ($file->isFile()) {
+                unlink($file->getPathname());
+            }
+        }
+    }
+
     public function setUp(): void
     {
         parent::setUp();
@@ -26,14 +43,21 @@ class FileTest extends TestCase
         $initial_file_count = (new File($this->persistence))->action('count')->getOne();
         //copy some file to use
         $f = new File($this->persistence);
-        $f->createFileName('filetest.jpg');
+        $f->createFileName('filetest.txt');
         $this->copyFile($f->get('value'));
         $f->save();
         self::assertTrue($f->checkFileExists());
+        self::assertEquals(
+            $initial_file_count + 1,
+            (new File($this->persistence))->action('count')->getOne()
+        );
         $cf = clone $f;
         $f->delete();
         self::assertFalse($cf->checkFileExists());
-        self::assertEquals($initial_file_count, (new File($this->persistence))->action('count')->getOne());
+        self::assertEquals(
+            $initial_file_count,
+            (new File($this->persistence))->action('count')->getOne()
+        );
     }
 
     public function testDeleteNonExistantFile()
@@ -47,15 +71,16 @@ class FileTest extends TestCase
     {
         $f = new File($this->persistence);
         $f->set('value', 'FDFLKSD LFSDHF KSJB');
-        self::expectException(\atk4\data\Exception::class);
+        self::expectException(\Atk4\Data\Exception::class);
         $f->save();
     }
 
     public function testCreateNewFileNameIfExists()
     {
         $f = new File($this->persistence);
-        $f1 = $this->createTestFile('LALA.jpg', $this->persistence);
-        $f->createFileName($f1->get('value'));
+        $f->set('path', SAVE_FILES_IN);
+        $f1 = $this->createTestFile('LALA.jpg');
+        $f->createFileName('LALA.jpg');
         self::assertNotEquals($f->get('value'), $f1->get('value'));
         self::assertEquals($f->get('filetype'), $f1->get('filetype'));
     }
@@ -75,39 +100,33 @@ class FileTest extends TestCase
 
     public function testCryptId()
     {
-        $g = new File($this->persistence);
-        $g->set('value', 'demo_file.txt');
-        $g->set('path', 'tests/');
-        $g->save();
-        $c = $g->get('crypt_id');
-        self::assertEquals(21, strlen($g->get('crypt_id')));
-
-        //see if it stays the same after another save
-        $g->save();
-        self::assertEquals($c, $g->get('crypt_id'));
+        $file = $this->createTestFile('somefile.txt');
+        self::assertEquals(21, strlen($file->get('crypt_id')));
     }
 
     public function testDirectorySeparatorAddedToPath()
     {
-        $g = new File($this->persistence);
-        $g->set('value', 'demo_file.txt');
-        $g->set('path', 'tests');
-        $g->save();
-        self::assertEquals('tests/', $g->get('path'));
+        $this->createTestFile('someotherfilename.txt');
+        $file = new File($this->persistence);
+        $file->set('value', 'someotherfilename.txt');
+        $file->set('path', 'filedir');
+        $file->save();
+        self::assertEquals('filedir/', $file->get('path'));
     }
 
     public function testFileTypeSetIfNotThere()
     {
+        $this->createTestFile('evenanothername.txt');
         $g = new File($this->persistence);
-        $g->set('value', 'demo_file.txt');
-        $g->set('path', 'tests');
+        $g->set('value', 'evenanothername.txt');
+        $g->set('path', 'filedir');
         $g->save();
         self::assertEquals('txt', $g->get('filetype'));
     }
 
     public function testNonExistantFileGetsDeletedOnUpdate()
     {
-        $file = $this->createTestFile('somefile.jpg', $this->persistence);
+        $file = $this->createTestFile('somefile.jpg');
         $initial_file_count = (new File($this->persistence))->action('count')->getOne();
         unlink($file->getFullFilePath());
         $otherFile = new File($this->persistence);
@@ -117,4 +136,36 @@ class FileTest extends TestCase
             (new File($this->persistence))->action('count')->getOne()
         );
     }
+
+    protected function copyFile(string $filename, string $pathToFile = ''): bool
+    {
+        if (!$pathToFile) {
+            $pathToFile = FILE_BASE_PATH . SAVE_FILES_IN;
+        }
+        return copy(
+            $this->addDirectorySeperatorToPath(FILE_BASE_PATH) . 'testfile.txt',
+            $this->addDirectorySeperatorToPath($pathToFile) . $filename
+        );
+    }
+
+    protected function addDirectorySeperatorToPath(string $path): string
+    {
+        if (substr($path, -1) !== DIRECTORY_SEPARATOR) {
+            return $path . DIRECTORY_SEPARATOR;
+        }
+
+        return $path;
+    }
+
+    public function createTestFile(
+        string $filename
+    ): File {
+        $file = new File($this->persistence);
+        $file->createFileName($filename);
+        $this->copyFile($file->get('value'));
+        $file->save();
+
+        return $file;
+    }
+
 }

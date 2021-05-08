@@ -2,10 +2,10 @@
 
 namespace fileforatk;
 
-use atk4\data\Exception;
+use Atk4\Data\Exception;
+use Atk4\Data\Model;
 use secondarymodelforatk\SecondaryModel;
 use traitsforatkdata\CryptIdTrait;
-use atk4\data\Model;
 
 
 class File extends SecondaryModel
@@ -27,8 +27,7 @@ class File extends SecondaryModel
                     'path',
                     'type' => 'string'
                 ],
-                //currently BC, INVOICE or TOURLIST for auto-generated pdfs, MAP for meeting point maps,
-                //TEMPORARY for files which get deleted by cronjob later
+                //extra field to further classify file if needed, e.g. "ATTACHMENT", "TEMPORARY"
                 [
                     'type',
                     'type' => 'string'
@@ -44,7 +43,7 @@ class File extends SecondaryModel
                     'type' => 'boolean',
                     'default' => false
                 ],
-                //crypt_id, used when file should is made available for download
+                //crypt_id, used when file is made available for download
                 [
                     'crypt_id',
                     'type' => 'string',
@@ -61,14 +60,8 @@ class File extends SecondaryModel
         $this->onHook(
             Model::HOOK_BEFORE_SAVE,
             function (self $model, $isUpdate) {
-                //add / to path
-                if (
-                    $model->get('path')
-                    && substr($model->get('path'), -1) !== DIRECTORY_SEPARATOR
-                ) {
-                    $model->set('path', $model->get('path') . DIRECTORY_SEPARATOR);
-                }
 
+                $this->addDirectorySeparatorToPath();
                 //If file does not exist, dont save this in DB
                 if (!$model->checkFileExists()) {
                     throw new Exception('The file to be saved does not exist: ' . $this->getFullFilePath());
@@ -83,7 +76,9 @@ class File extends SecondaryModel
                 }
 
                 //file needs Crypt ID
-                $model->setCryptId('crypt_id');
+                if (!$isUpdate) {
+                    $model->setCryptId('crypt_id');
+                }
             }
         );
 
@@ -99,7 +94,7 @@ class File extends SecondaryModel
             }
         );
 
-        //after successful delete, delete file as well
+        //after successful delete of DB record, delete physical file as well
         $this->onHook(
             Model::HOOK_AFTER_DELETE,
             function (self $model) {
@@ -107,12 +102,13 @@ class File extends SecondaryModel
             }
         );
 
-        //set path to standard file
+        //set path to standard if defined
         if (
             empty($this->get('path'))
             && defined('SAVE_FILES_IN')
         ) {
             $this->set('path', SAVE_FILES_IN);
+            $this->addDirectorySeparatorToPath();
         }
     }
 
@@ -140,24 +136,25 @@ class File extends SecondaryModel
         $this->set('filetype', pathinfo($name, PATHINFO_EXTENSION));
 
         //can only check for existing file if path is set
-        if ($uniqueName) {
-            $old_name = $this->get('value');
-            $i = 1;
-            while (file_exists($this->getFullFilePath())) {
-                $this->set(
-                    'value',
-                    pathinfo($old_name, PATHINFO_FILENAME) . '_' . $i .
-                    ($this->get('filetype') ? '.' . $this->get('filetype') : '')
-                );
-                $i++;
-            }
+        if (!$uniqueName) {
+            return;
+        }
+        $currentName = $this->get('value');
+        $i = 1;
+        while (file_exists($this->getFullFilePath())) {
+            $this->set(
+                'value',
+                pathinfo($currentName, PATHINFO_FILENAME) . '_' . $i .
+                ($this->get('filetype') ? '.' . $this->get('filetype') : '')
+            );
+            $i++;
         }
     }
 
     /**
      * Uses $_FILES array content to call move_uploaded_file
      */
-    public function uploadFile($f)
+    public function uploadFile(array $f)
     {
         $this->createFileName($f['name']);
         //try move the uploaded file, quit on error
@@ -166,7 +163,7 @@ class File extends SecondaryModel
 
     public function getFullFilePath(): string
     {
-        return FILE_BASE_PATH . $this->get('path') . $this->get('value');
+        return FILE_BASE_PATH . $this->addDirectorySeparatorToPath() . $this->get('value');
     }
 
     public function checkFileExists(): bool
@@ -179,10 +176,21 @@ class File extends SecondaryModel
 
     public function saveStringToFile(string $string): bool
     {
-        $res = null;
         if (!$this->get('value')) {
             $this->createFileName('UnnamedFile');
         }
         return (bool)file_put_contents($this->getFullFilePath(), $string);
+    }
+
+    protected function addDirectorySeparatorToPath(): string
+    {
+        if (
+            $this->get('path')
+        &&  substr($this->get('path'), -1) !== DIRECTORY_SEPARATOR
+        ) {
+            $this->set('path', $this->get('path') . DIRECTORY_SEPARATOR);
+        }
+
+        return $this->get('path');
     }
 }
