@@ -19,8 +19,13 @@ class FileTest extends TestCase
     public static function setUpBeforeClass(): void
     {
         parent::setUpBeforeClass();
-        define('FILE_BASE_PATH', __DIR__ . DIRECTORY_SEPARATOR);
-        define('SAVE_FILES_IN', 'filedir');
+        if (!defined('FILE_BASE_PATH')) {
+            define('FILE_BASE_PATH', __DIR__ . DIRECTORY_SEPARATOR);
+        }
+
+        if (!defined('SAVE_FILES_IN')) {
+            define('SAVE_FILES_IN', 'filedir');
+        }
     }
 
     public static function tearDownAfterClass(): void
