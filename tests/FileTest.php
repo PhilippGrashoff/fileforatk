@@ -5,6 +5,7 @@ namespace fileforatk\tests;
 use Atk4\Data\Exception;
 use fileforatk\File;
 use traitsforatkdata\TestCase;
+use traitsforatkdata\UserException;
 
 
 class FileTest extends TestCase
@@ -20,11 +21,11 @@ class FileTest extends TestCase
     {
         parent::setUpBeforeClass();
         if (!defined('FILE_BASE_PATH')) {
-            define('FILE_BASE_PATH', __DIR__ . DIRECTORY_SEPARATOR);
+            define('FILE_BASE_PATH', dirname(__DIR__) . DIRECTORY_SEPARATOR);
         }
 
         if (!defined('SAVE_FILES_IN')) {
-            define('SAVE_FILES_IN', 'filedir');
+            define('SAVE_FILES_IN', 'tests/filedir');
         }
     }
 
@@ -97,11 +98,12 @@ class FileTest extends TestCase
         self::assertTrue($f->saveStringToFile('JLADHDDFEJD'));
     }
 
-    public function testuploadFile()
+    public function testuploadFileUserExceptionOnError()
     {
         $f = new File($this->persistence);
-        //false because move_uploaded_file knows its not an uploaded file
-        self::assertFalse($f->uploadFile(['name' => 'LALA', 'tmp_name' => 'sdfkjsdf.txt']));
+        //false because move_uploaded_file knows its not an uploaded file#
+        self::expectException(UserException::class);
+        $f->uploadFile(['name' => 'LALA', 'tmp_name' => 'sdfkjsdf.txt']);
     }
 
     public function testCryptId()
@@ -115,9 +117,9 @@ class FileTest extends TestCase
         $this->createTestFile('someotherfilename.txt');
         $file = new File($this->persistence);
         $file->set('value', 'someotherfilename.txt');
-        $file->set('path', 'filedir');
+        $file->set('path', 'tests/filedir');
         $file->save();
-        self::assertEquals('filedir/', $file->get('path'));
+        self::assertEquals('tests/filedir/', $file->get('path'));
     }
 
     public function testFileTypeSetIfNotThere()
@@ -125,7 +127,7 @@ class FileTest extends TestCase
         $this->createTestFile('evenanothername.txt');
         $g = new File($this->persistence);
         $g->set('value', 'evenanothername.txt');
-        $g->set('path', 'filedir');
+        $g->set('path', 'tests/filedir');
         $g->save();
         self::assertEquals('txt', $g->get('filetype'));
     }
@@ -149,7 +151,7 @@ class FileTest extends TestCase
             $pathToFile = FILE_BASE_PATH . SAVE_FILES_IN;
         }
         return copy(
-            $this->addDirectorySeperatorToPath(FILE_BASE_PATH) . 'testfile.txt',
+            $this->addDirectorySeperatorToPath(FILE_BASE_PATH) . 'tests/testfile.txt',
             $this->addDirectorySeperatorToPath($pathToFile) . $filename
         );
     }

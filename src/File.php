@@ -6,6 +6,7 @@ use Atk4\Data\Exception;
 use Atk4\Data\Model;
 use secondarymodelforatk\SecondaryModel;
 use traitsforatkdata\CryptIdTrait;
+use traitsforatkdata\UserException;
 
 
 class File extends SecondaryModel
@@ -171,11 +172,13 @@ class File extends SecondaryModel
     /**
      * Uses $_FILES array content to call move_uploaded_file
      */
-    public function uploadFile(array $f): bool
+    public function uploadFile(array $f): void
     {
         $this->createFileName($f['name']);
-        //try move the uploaded file, quit on error
-        return move_uploaded_file($f['tmp_name'], $this->getFullFilePath());
+
+        if (!move_uploaded_file($f['tmp_name'], $this->getFullFilePath())) {
+            throw new UserException('Die Datei konnte nicht hochgeladen werden.');
+        }
     }
 
     public function getFullFilePath(): string
@@ -208,6 +211,6 @@ class File extends SecondaryModel
             $this->set('path', $this->get('path') . DIRECTORY_SEPARATOR);
         }
 
-        return (string) $this->get('path');
+        return (string)$this->get('path');
     }
 }

@@ -9,10 +9,11 @@ use fileforatk\File;
 class FileMock extends File
 {
 
-    public function uploadFile($f): bool
+    public function uploadFile($f): void
     {
         $this->set('value', $f['name']);
-        $this->set('path', $f['path']);
-        return true;
+        if(isset($f['path'])) {
+            $this->set('path', $f['path']);
+        }
     }
 }
