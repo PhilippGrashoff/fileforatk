@@ -2,12 +2,10 @@
 
 declare(strict_types=1);
 
-namespace fileforatk;
+namespace PhilippR\Atk4\File;
 
-use atk4\data\Model;
 use atk4\data\Reference\HasMany;
-use secondarymodelforatk\SecondaryModelRelationTrait;
-use traitsforatkdata\UserException;
+use PhilippR\Atk4\SecondaryModel\SecondaryModelRelationTrait;
 
 trait FileRelationTrait
 {
@@ -17,7 +15,7 @@ trait FileRelationTrait
 
     protected function addFileReferenceAndDeleteHook(bool $addDelete = true): HasMany
     {
-        return $this->addSecondaryModelHasMany($this->fileClassName);
+        return $this->addSecondaryModelHasMany($this->fileClassName, $addDelete);
     }
 
     /**
@@ -25,7 +23,8 @@ trait FileRelationTrait
      */
     public function addUploadFileFromAtkUi(array $temp_file, string $type = ''): File
     {
-        $file = new $this->fileClassName($this->persistence, ['parentObject' => $this]);
+        $file = (new $this->fileClassName($this->getPersistence()))->createEntity();
+        $file->setParentEntity($this);
         $file->uploadFile($temp_file);
         if ($type) {
             $file->set('type', $type);
@@ -40,7 +39,7 @@ trait FileRelationTrait
      */
     public function removeFile($fileId): File
     {
-        $file = new $this->fileClassName($this->persistence);
+        $file = new $this->fileClassName($this->getPersistence());
         $file->tryLoad($fileId);
         if (!$file->loaded()) {
             throw new UserException('Die Datei die gelöscht werden soll kann nicht gefunden werden.');

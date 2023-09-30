@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace fileforatk\tests;
+namespace PhilippR\Atk4\File\Tests;
 
 use Atk4\Data\Exception;
-use fileforatk\File;
+use PhilippR\Atk4\File\File;
 use traitsforatkdata\TestCase;
 use traitsforatkdata\UserException;
 

@@ -1,13 +1,13 @@
 <?php declare(strict_types=1);
 
-namespace fileforatk\tests;
+namespace PhilippR\Atk4\File\Tests;
 
 
 use Atk4\Ui\App;
-use fileforatk\File;
+use PhilippR\Atk4\File\File;
 use traitsforatkdata\TestCase;
-use fileforatk\tests\testclasses\FileMock;
-use fileforatk\tests\testclasses\ModelWithFileRelation;
+use PhilippR\Atk4\File\Tests\Testclasses\FileMock;
+use PhilippR\Atk4\File\Tests\Testclasses\ModelWithFileRelation;
 use traitsforatkdata\UserException;
 
 

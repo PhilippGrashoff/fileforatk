@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace fileforatk\tests;
+namespace PhilippR\Atk4\File\Tests;
 
-use fileforatk\SafeFileName;
+use PhilippR\Atk4\File\SafeFileName;
 use traitsforatkdata\TestCase;
 
 class SafeFileNameTest extends TestCase

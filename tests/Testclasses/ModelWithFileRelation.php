@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace fileforatk\tests\testclasses;
+namespace PhilippR\Atk4\File\Tests\Testclasses;
 
 use Atk4\Data\Model;
-use fileforatk\FileRelationTrait;
+use PhilippR\Atk4\File\FileRelationTrait;
 
 class ModelWithFileRelation extends Model
 {
