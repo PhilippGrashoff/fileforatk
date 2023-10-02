@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PhilippR\Atk4\File;
 
+use Atk4\Data\Exception;
 use atk4\data\Reference\HasMany;
 use PhilippR\Atk4\SecondaryModel\SecondaryModelRelationTrait;
 
@@ -13,13 +14,23 @@ trait FileRelationTrait
 
     protected string $fileClassName = File::class;
 
+    /**
+     * @param bool $addDelete
+     * @return HasMany
+     * @throws \Atk4\Core\Exception
+     * @throws \Atk4\Data\Exception
+     */
     protected function addFileReferenceAndDeleteHook(bool $addDelete = true): HasMany
     {
         return $this->addSecondaryModelHasMany($this->fileClassName, $addDelete);
     }
 
     /**
-     * Used to map ATK ui file input to data level
+     *  Used to map ATK ui file input to data level TODO check if this is needed in V5 versions
+     *
+     * @param array $temp_file
+     * @param string $type
+     * @return File
      */
     public function addUploadFileFromAtkUi(array $temp_file, string $type = ''): File
     {
@@ -35,16 +46,13 @@ trait FileRelationTrait
     }
 
     /**
-     * removes a file reference.
+     * @param $fileId
+     * @return File
      */
     public function removeFile($fileId): File
     {
         $file = new $this->fileClassName($this->getPersistence());
-        $file->tryLoad($fileId);
-        if (!$file->loaded()) {
-            throw new UserException('Die Datei die gelöscht werden soll kann nicht gefunden werden.');
-        }
-
+        $file->load($fileId);
         $file->delete();
         return $file;
     }
