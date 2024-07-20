@@ -90,6 +90,7 @@ class FileTest extends TestCase
     public function testNonExistentFileGetsDeletedOnUpdate(): void
     {
         $file = $this->createTestFile('somefile.jpg');
+        $file->reload(); //to get coverage for single line
         $initial_file_count = (new File($this->db))->action('count')->getOne();
         unlink($file->getFullFilePath());
         $otherFile = (new File($this->db))->load($file->getId());
@@ -99,7 +100,8 @@ class FileTest extends TestCase
         );
     }
 
-    public function testDirectorySeparatorIsAddedToRelativePath(): void {
+    public function testDirectorySeparatorIsAddedToRelativePath(): void
+    {
         $file = (new File($this->db))->createEntity();
         $helper = \Closure::bind(
             static function () use ($file) {
@@ -112,45 +114,51 @@ class FileTest extends TestCase
         self::assertSame('filedir/', $file->get('relative_path'));
     }
 
-    public function testOriginIsAddedOnSaveStringToFile(): void {
 
-    }
-
-    public function testSaveUploadFileFromAtkUiAddsToParent(): void
+    public function testSaveStringToFileAddsToParent(): void
     {
-        $parent = (new ModelWithFileRelation($this->db, ['fileClass' => UploadedFileMock::class]))->createEntity()->save();
-        $file = (new UploadedFileMock($this->db))->createEntity();
-        $file->saveUploadFileFromAtkUi(['name' => 'testfile.txt', 'path' => 'tests/'], $parent);
-        self::assertEquals(1, $parent->ref(UploadedFileMock::class)->action('count')->getOne());
+        $parent = (new ModelWithFileRelation($this->db))->createEntity()->save();
+        $file = (new File($this->db))->createEntity();
+        $file->saveStringToFile('test', $parent, 'testfile.txt');
+        self::assertEquals(1, $parent->ref(File::class)->action('count')->getOne());
     }
+
+    public function testSaveStringToFileSetsFieldValues(): void
+    {
+        $parent = (new ModelWithFileRelation($this->db))->createEntity()->save();
+        $file = (new File($this->db))->createEntity();
+        $file->saveStringToFile(
+            'test',
+            $parent,
+            'testfile.txt',
+            '',
+            ['type' => 'TESTTYPE', 'sort' => 10, 'origin' => 'UPLOADED']
+        );
+
+        self::assertSame('TESTTYPE', $file->get('type'));
+        self::assertSame('10', $file->get('sort'));
+        self::assertSame('UPLOADED', $file->get('origin'));
+    }
+
     public function testSaveUploadFileFromAtkUiSetsFields(): void
     {
-        $parent = (new ModelWithFileRelation($this->db, ['fileClass' => UploadedFileMock::class]))->createEntity()->save();
+        $parent = (new ModelWithFileRelation($this->db, ['fileClass' => UploadedFileMock::class]))->createEntity(
+        )->save();
         $file = (new UploadedFileMock($this->db))->createEntity();
-        $file->saveUploadFileFromAtkUi(['name' => 'testfile.txt', 'path' => 'tests/'], $parent, );
-        self::assertEquals(1, $parent->ref(UploadedFileMock::class)->action('count')->getOne());
+        $file->saveUploadFileFromAtkUi(
+            ['name' => 'testfile.txt', 'path' => 'tests/'],
+            $parent,
+            '',
+            ['type' => 'TESTTYPE', 'sort' => 10, 'origin' => 'UPLOADED']
+        );
+
+        self::assertSame('TESTTYPE', $file->get('type'));
+        self::assertSame('10', $file->get('sort'));
+        self::assertSame('UPLOADED', $file->get('origin'));
     }
 
-    public function testSaveUploadFileFromAtkUiPathAndTypeAreUsed(): void
+    protected function createTestFile(string $filename): File
     {
-        $parent = (new ModelWithFileRelation($this->db, ['fileClass' => UploadedFileMock::class]))->createEntity()->save();
-        $file = (new File($this->db))->createEntity();
-        $file->saveUploadFileFromAtkUi(['name' => 'testfile.txt', 'tmp_name' => 'testfile.txt', 'path' => 'tests/'], $parent);
-        self::assertEquals(1, $parent->ref(UploadedFileMock::class)->action('count')->getOne());
-    }
-
-    public function testAddTypeToFile()
-    {
-        $model = new ModelWithFileRelation($this->db, ['fileClassName' => UploadedFileMock::class]);
-        $model->save();
-        $file = $model->addUploadFileFromAtkUi(['name' => 'testfile.txt', 'path' => 'tests/']);
-        self::assertEquals('', $file->get('type'));
-
-        $file = $model->addUploadFileFromAtkUi(['name' => 'testfile.txt', 'path' => 'tests/'], 'SOMETYPE');
-        self::assertEquals('SOMETYPE', $file->get('type'));
-    }
-
-    protected function createTestFile(string $filename): File {
         $parent = (new ModelWithFileRelation($this->db))->createEntity();
         $parent->save();
         $file = (new File($this->db))->createEntity();

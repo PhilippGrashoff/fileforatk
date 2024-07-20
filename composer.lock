@@ -659,16 +659,16 @@
         },
         {
             "name": "philippgrashoff/secondarymodelforatk",
-            "version": "5.0.0",
+            "version": "5.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PhilippGrashoff/secondarymodelforatk.git",
-                "reference": "dd964ad7d58fef80d16fea87a0608ed7a2fea0cf"
+                "reference": "bd98a0fa1c47b1bcdd1de81c38d97c7f3d89aca0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PhilippGrashoff/secondarymodelforatk/zipball/dd964ad7d58fef80d16fea87a0608ed7a2fea0cf",
-                "reference": "dd964ad7d58fef80d16fea87a0608ed7a2fea0cf",
+                "url": "https://api.github.com/repos/PhilippGrashoff/secondarymodelforatk/zipball/bd98a0fa1c47b1bcdd1de81c38d97c7f3d89aca0",
+                "reference": "bd98a0fa1c47b1bcdd1de81c38d97c7f3d89aca0",
                 "shasum": ""
             },
             "require": {
@@ -677,7 +677,7 @@
             },
             "require-dev": {
                 "phpstan/phpstan": "1.*",
-                "phpunit/phpunit": "^9.5.5"
+                "phpunit/phpunit": "10.*"
             },
             "type": "library",
             "autoload": {
@@ -688,9 +688,9 @@
             "notification-url": "https://packagist.org/downloads/",
             "support": {
                 "issues": "https://github.com/PhilippGrashoff/secondarymodelforatk/issues",
-                "source": "https://github.com/PhilippGrashoff/secondarymodelforatk/tree/5.0.0"
+                "source": "https://github.com/PhilippGrashoff/secondarymodelforatk/tree/5.2.0"
             },
-            "time": "2023-10-02T19:04:11+00:00"
+            "time": "2024-07-20T19:22:17+00:00"
         },
         {
             "name": "psr/cache",

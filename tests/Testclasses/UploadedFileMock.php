@@ -11,19 +11,16 @@ class UploadedFileMock extends File
         array $tempFileData,
         Model $parent,
         string $relativePath = '',
-        string $type = ''
+        array $fieldValues = []
     ): static {
-
         try {
             parent::saveUploadFileFromAtkUi(
                 $tempFileData,
                 $parent,
                 $relativePath,
-                $type
+                $fieldValues
             );
-        }
-        catch (\Exception $e) {
-
+        } catch (\Throwable $e) {
         }
         return $this;
     }
