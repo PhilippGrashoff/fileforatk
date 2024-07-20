@@ -41,7 +41,7 @@ class SafeFileName
     {
         $result =  preg_replace('/[^a-zA-Z0-9_.]/', '', $input);
         if($result === null) {
-            throw new Exception('Error in preg_replace() in ' . __FUNCTION__);
+            throw new Exception('Error in preg_replace() in ' . __FUNCTION__); //@codeCoverageIgnore
         }
 
         return $result;

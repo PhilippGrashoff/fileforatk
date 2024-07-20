@@ -2,16 +2,29 @@
 
 namespace PhilippR\Atk4\File\Tests\Testclasses;
 
-use PhilippR\Atk4\File\File;
+use Atk4\Data\Model;
 
 class UploadedFileMock extends File
 {
 
-    public function uploadFile($f): void
-    {
-        $this->set('value', $f['name']);
-        if(isset($f['path'])) {
-            $this->set('path', $f['path']);
+    public function saveUploadFileFromAtkUi(
+        array $tempFileData,
+        Model $parent,
+        string $relativePath = '',
+        string $type = ''
+    ): static {
+
+        try {
+            parent::saveUploadFileFromAtkUi(
+                $tempFileData,
+                $parent,
+                $relativePath,
+                $type
+            );
         }
+        catch (\Exception $e) {
+
+        }
+        return $this;
     }
 }

@@ -64,14 +64,6 @@ abstract class File extends SecondaryModel
                 if (!$fileEntity->checkFileExists()) {
                     throw new Exception('The file to be saved does not exist: ' . $this->getFullFilePath());
                 }
-
-                //add filetype if not there
-                if (
-                    !$fileEntity->get('filetype')
-                    && $fileEntity->get('filename')
-                ) {
-                    $fileEntity->set('filetype', pathinfo($fileEntity->get('filename'), PATHINFO_EXTENSION));
-                }
             }
         );
 
@@ -142,12 +134,16 @@ abstract class File extends SecondaryModel
         Model $parent,
         string $fileName,
         string $relativePath = '',
-        string $type = ''
+        string $type = '',
+        string $origin = '',
+        string $sort = ''
     ): static {
         $this->setParentEntity($parent);
         $this->setRelativePath($relativePath);
         $this->setFileName($fileName ?: 'UnnamedFile');
         $this->set('type', $type);
+        $this->set('origin', $origin);
+        $this->set('sort', $sort);
 
         $result = file_put_contents($this->getFullFilePath(), $stringToSave);
         if ($result === false) {
@@ -171,12 +167,16 @@ abstract class File extends SecondaryModel
         array $tempFileData,
         Model $parent,
         string $relativePath = '',
-        string $type = ''
+        string $type = '',
+        string $origin = '',
+        string $sort = ''
     ): static {
         $this->setParentEntity($parent);
         $this->setRelativePath($relativePath);
-        $this->createFileName($tempFileData['name']);
+        $this->setFileName($tempFileData['name']);
         $this->set('type', $type);
+        $this->set('origin', $origin);
+        $this->set('sort', $sort);
 
         if (!move_uploaded_file($tempFileData['tmp_name'], $this->getFullFilePath())) {
             throw new Exception('The file could not be uploaded.');

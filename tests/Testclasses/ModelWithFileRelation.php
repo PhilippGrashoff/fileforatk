@@ -11,11 +11,13 @@ class ModelWithFileRelation extends Model
     use SecondaryModelRelationTrait;
     public $table = 'model_with_file_relation';
 
+    protected string $fileClass = File::class;
+
     protected function init(): void
     {
         parent::init();
         $this->addField('name');
 
-        $this->addSecondaryModelHasMany(File::class);
+        $this->addSecondaryModelHasMany($this->fileClass);
     }
 }
