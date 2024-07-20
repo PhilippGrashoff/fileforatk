@@ -3,13 +3,12 @@
 namespace PhilippR\Atk4\File\Tests\Testclasses;
 
 use Atk4\Data\Model;
-use PhilippR\Atk4\File\FileRelationTrait;
+use PhilippR\Atk4\SecondaryModel\SecondaryModelRelationTrait;
 
 class ModelWithFileRelation extends Model
 {
 
-    use FileRelationTrait;
-
+    use SecondaryModelRelationTrait;
     public $table = 'model_with_file_relation';
 
     protected function init(): void
@@ -17,6 +16,6 @@ class ModelWithFileRelation extends Model
         parent::init();
         $this->addField('name');
 
-        $this->addFileReferenceAndDeleteHook();
+        $this->addSecondaryModelHasMany(File::class);
     }
 }

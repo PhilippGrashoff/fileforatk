@@ -6,6 +6,7 @@ use Atk4\Data\Exception;
 use Atk4\Data\Persistence\Sql;
 use Atk4\Data\Schema\TestCase;
 use PhilippR\Atk4\File\Tests\Testclasses\File;
+use PhilippR\Atk4\File\Tests\Testclasses\ModelWithFileRelation;
 
 
 class FileTest extends TestCase
@@ -26,16 +27,14 @@ class FileTest extends TestCase
         parent::setUp();
         $this->db = new Sql('sqlite::memory:');
         $this->createMigrator(new File($this->db))->create();
+        $this->createMigrator(new ModelWithFileRelation($this->db))->create();
     }
 
     public function testDelete(): void
     {
         $initial_file_count = (new File($this->db))->action('count')->getOne();
         //copy some file to use
-        $f = (new File($this->db))->createEntity();
-        $f->setFileName('filetest.txt');
-        $this->copyFile($f->get('filename'));
-        $f->save();
+        $f = $this->createTestFile('deleteTest.txt');
         self::assertTrue($f->checkFileExists());
         self::assertEquals(
             $initial_file_count + 1,
@@ -50,14 +49,7 @@ class FileTest extends TestCase
         );
     }
 
-    public function testDeleteNonExistantFile(): void
-    {
-        $f = (new File($this->db))->createEntity();
-        $f->set('filename', 'SomeNonExistantFile');
-        self::assertFalse($f->deleteFile());
-    }
-
-    public function testExceptionOnSaveNonExistantFile(): void
+    public function testExceptionOnSaveNonExistentFile(): void
     {
         $f = (new File($this->db))->createEntity();
         $f->set('filename', 'FDFLKSD LFSDHF KSJB');
@@ -67,96 +59,53 @@ class FileTest extends TestCase
 
     public function testCreateNewFileNameIfExists(): void
     {
-        $f = (new File($this->db))->createEntity();
         $f1 = $this->createTestFile('LALA.jpg');
-        $f->setFileName('LALA.jpg');
-        self::assertNotEquals($f->get('filename'), $f1->get('filename'));
-        self::assertEquals($f->get('filetype'), $f1->get('filetype'));
+        $f2 = $this->createTestFile('LALA.jpg');
+        self::assertNotEquals($f2->get('filename'), $f1->get('filename'));
+        self::assertEquals($f2->get('filetype'), $f1->get('filetype'));
+        self::assertSame('LALA_1.jpg', $f2->get('filename'));
     }
 
-    /*
-    public function testSaveStringToFile()
-    {
-        $f = (new File($this->db))->createEntity();
-        self::assertTrue($f->saveStringToFile('JLADHDDFEJD'));
-    }*/
-
-    public function testuploadFileUserExceptionOnError()
-    {
-        $f = (new File($this->db))->createEntity();
-        //false because move_uploaded_file knows it's not an uploaded file
-        self::expectException(UserException::class);
-        $f->uploadFile(['name' => 'LALA', 'tmp_name' => 'sdfkjsdf.txt']);
-    }
-
-    public function testCryptId()
+    public function testCryptId(): void
     {
         $file = $this->createTestFile('somefile.txt');
         self::assertEquals(21, strlen($file->get('crypt_id')));
     }
 
-    public function testDirectorySeparatorAddedToPath()
+    public function testFileTypeSetBySetFileName(): void
     {
-        $this->createTestFile('someotherfilename.txt');
         $file = (new File($this->db))->createEntity();
-        $file->set('value', 'someotherfilename.txt');
-        $file->set('path', 'tests/filedir');
-        $file->save();
-        self::assertEquals('tests/filedir/', $file->get('path'));
+        $helper = \Closure::bind(
+            static function () use ($file) {
+                $file->setFileName('evenanothername.txt');
+            },
+            null,
+            $file
+        );
+        $helper();
+        self::assertEquals('txt', $file->get('filetype'));
     }
 
-    public function testFileTypeSetIfNotThere()
-    {
-        $this->createTestFile('evenanothername.txt');
-        $g = (new File($this->db))->createEntity();
-        $g->set('value', 'evenanothername.txt');
-        $g->set('path', 'tests/filedir');
-        $g->save();
-        self::assertEquals('txt', $g->get('filetype'));
-    }
-
-    public function testNonExistantFileGetsDeletedOnUpdate()
+    public function testNonExistantFileGetsDeletedOnUpdate(): void
     {
         $file = $this->createTestFile('somefile.jpg');
         $initial_file_count = (new File($this->db))->action('count')->getOne();
         unlink($file->getFullFilePath());
-        $otherFile = (new File($this->db))->createEntity();
-        $otherFile->load($file->get('id'));
+        $otherFile = (new File($this->db))->load($file->getId());
         self::assertEquals(
             $initial_file_count - 1,
             (new File($this->db))->action('count')->getOne()
         );
     }
 
-    protected function copyFile(string $filename, string $pathToFile = ''): bool
-    {
-        if (!$pathToFile) {
-            $pathToFile = FILE_BASE_PATH . SAVE_FILES_IN;
-        }
-        return copy(
-            $this->addDirectorySeperatorToPath(FILE_BASE_PATH) . 'tests/testfile.txt',
-            $this->addDirectorySeperatorToPath($pathToFile) . $filename
-        );
-    }
-
-    protected function addDirectorySeperatorToPath(string $path): string
-    {
-        if (substr($path, -1) !== DIRECTORY_SEPARATOR) {
-            return $path . DIRECTORY_SEPARATOR;
-        }
-
-        return $path;
-    }
-
     public function createTestFile(
         string $filename
     ): File {
+        $parent = (new ModelWithFileRelation($this->db))->createEntity();
+        $parent->save();
         $file = (new File($this->db))->createEntity();
-        $file->setFileName($filename);
-        $this->copyFile($file->get('filename'));
-        $file->save();
+        $file->saveStringToFile('demostring', $parent, $filename);
 
         return $file;
     }
-
 }

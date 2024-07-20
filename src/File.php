@@ -57,22 +57,9 @@ abstract class File extends SecondaryModel
             }
         );
 
-        //set path to standard if defined
         $this->onHook(
             Model::HOOK_BEFORE_SAVE,
             function (self $fileEntity) {
-                if (
-                    empty($fileEntity->get('relative_path'))
-                ) {
-                    $fileEntity->set('relative_path', $fileEntity->getDefaultRelativePath());
-                }
-            }
-        );
-
-        $this->onHook(
-            Model::HOOK_BEFORE_SAVE,
-            function (self $fileEntity, bool $isUpdate) {
-                $fileEntity->addDirectorySeparatorToRelativePath();
                 //If file does not exist, don't save this in DB
                 if (!$fileEntity->checkFileExists()) {
                     throw new Exception('The file to be saved does not exist: ' . $this->getFullFilePath());
@@ -108,7 +95,7 @@ abstract class File extends SecondaryModel
         return $return;
     }
 
-    public function deleteFile(): bool
+    protected function deleteFile(): bool
     {
         if (file_exists($this->getFullFilePath())) {
             return unlink($this->getFullFilePath());
@@ -116,11 +103,11 @@ abstract class File extends SecondaryModel
         return false;
     }
 
-    public function setFileName(string $name): void
+    protected function setFileName(string $name): void
     {
         $this->set('filename', SafeFileName::createSafeFileName($name));
         $this->set('filetype', pathinfo($name, PATHINFO_EXTENSION));
-
+        
         $currentName = $this->get('filename');
         $i = 1;
         while (file_exists($this->getFullFilePath())) {
@@ -133,26 +120,14 @@ abstract class File extends SecondaryModel
         }
     }
 
-    /**
-     * Uses $_FILES array content to call move_uploaded_file
-     */
-    /*public function uploadFile(array $f): void
-    {
-        $this->createFileName($f['name']);
-
-        if (!move_uploaded_file($f['tmp_name'], $this->getFullFilePath())) {
-            throw new UserException('Die Datei konnte nicht hochgeladen werden.');
-        }
-    }*/
-
     public function getFullFilePath(): string
     {
-        return $this->getBaseDir() . $this->addDirectorySeparatorToRelativePath() . $this->get('filename');
+        return $this->getBaseDir() . $this->get('relative_path') . $this->get('filename');
     }
 
-    abstract protected  function getBaseDir(): string;
+    abstract public function getBaseDir(): string;
 
-    abstract protected  function getDefaultRelativePath(): string;
+    abstract public function getDefaultRelativePath(): string;
 
     public function checkFileExists(): bool
     {
@@ -162,26 +137,64 @@ abstract class File extends SecondaryModel
         );
     }
 
-    //TODO bool is crap, raise exception if file save failed
-    public function saveStringToFile(string $string): void
-    {
-        if (!$this->get('filename')) {
-            $this->setFileName('UnnamedFile');
-        }
-        $result = file_put_contents($this->getFullFilePath(), $string);
-        if($result === false) {
+    public function saveStringToFile(
+        string $stringToSave,
+        Model $parent,
+        string $fileName,
+        string $relativePath = '',
+        string $type = ''
+    ): static {
+        $this->setParentEntity($parent);
+        $this->setRelativePath($relativePath);
+        $this->setFileName($fileName ?: 'UnnamedFile');
+        $this->set('type', $type);
+
+        $result = file_put_contents($this->getFullFilePath(), $stringToSave);
+        if ($result === false) {
             throw new Exception('Unable to write to file: ' . $this->getFullFilePath());
         }
+
+        $this->save();
+        return $this;
     }
 
-    protected function addDirectorySeparatorToRelativePath(): string
-    {
-        if (
-            $this->get('relative_path')
-            && substr($this->get('relative_path'), -1) !== DIRECTORY_SEPARATOR
-        ) {
-            $this->set('relative_path', $this->get('relative_path') . DIRECTORY_SEPARATOR);
+    /**
+     * @param array $tempFileData
+     * @param Model $parent
+     * @param string $relativePath
+     * @param string $type
+     * @return File
+     * @throws Exception
+     * @throws \Atk4\Core\Exception
+     */
+    public function saveUploadFileFromAtkUi(
+        array $tempFileData,
+        Model $parent,
+        string $relativePath = '',
+        string $type = ''
+    ): static {
+        $this->setParentEntity($parent);
+        $this->setRelativePath($relativePath);
+        $this->createFileName($tempFileData['name']);
+        $this->set('type', $type);
+
+        if (!move_uploaded_file($tempFileData['tmp_name'], $this->getFullFilePath())) {
+            throw new Exception('The file could not be uploaded.');
         }
+
+        $this->save();
+        return $this;
+    }
+
+    protected function setRelativePath(string $relativePath): string
+    {
+        if (!$relativePath) {
+            $relativePath = $this->getDefaultRelativePath();
+        }
+        if (substr($relativePath, -1) !== DIRECTORY_SEPARATOR) {
+            $relativePath .= DIRECTORY_SEPARATOR;
+        }
+        $this->set('relative_path', $relativePath);
 
         return (string)$this->get('relative_path');
     }

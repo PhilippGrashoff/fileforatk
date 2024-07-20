@@ -10,7 +10,7 @@ use PhilippR\Atk4\File\Tests\Testclasses\UploadedFileMock;
 use PhilippR\Atk4\File\Tests\Testclasses\ModelWithFileRelation;
 
 
-class FileRelationTraitTest extends TestCase
+class FileControllerTest extends TestCase
 {
 
     public function setUp(): void
@@ -24,19 +24,19 @@ class FileRelationTraitTest extends TestCase
     /*
     public function testAddUploadedFile()
     {
-        $m = new ModelWithFileRelation($this->persistence, ['fileClassName' => FileMock::class]);
+        $m = new ModelWithFileRelation($this->db, ['fileClassName' => FileMock::class]);
         $m->save();
         $m->addUploadFileFromAtkUi('error');
         $m->addUploadFileFromAtkUi(['name' => 'ALAL', 'tmp_name' => 'HEHFDF']);
-        $m = new ModelWithFileRelation($this->persistence, ['fileClassName' => FileMock::class]);
+        $m = new ModelWithFileRelation($this->db, ['fileClassName' => FileMock::class]);
         self::assertEquals(null, $m->addUploadFileFromAtkUi(['name' => 'ALAL', 'tmp_name' => 'HEHFDF']));
     }
 
     public function testRemoveFile()
     {
-        $m = new ModelWithFileRelation($this->persistence);
+        $m = new ModelWithFileRelation($this->db);
         $m->save();
-        $f = $this->createTestFile('Hansi', $this->persistence, $m);
+        $f = $this->createTestFile('Hansi', $this->db, $m);
         self::assertEquals($m->ref(File::class)->action('count')->getOne(), 1);
         $m->removeFile($f->get('id'));
         self::assertEquals($m->ref(File::class)->action('count')->getOne(), 0);
@@ -44,7 +44,7 @@ class FileRelationTraitTest extends TestCase
 */
     public function testExceptionNonExistingFile()
     {
-        $m = new ModelWithFileRelation($this->persistence);
+        $m = new ModelWithFileRelation($this->db);
         $m->save();
         self::expectException(UserException::class);
         $m->removeFile(23432543635);
@@ -52,7 +52,7 @@ class FileRelationTraitTest extends TestCase
 /*
     public function testaddUploadFileViaHookOnSave()
     {
-        $m = new ModelWithFileRelation($this->persistence, ['fileClassName' => FileMock::class]);
+        $m = new ModelWithFileRelation($this->db, ['fileClassName' => FileMock::class]);
         $m->addUploadFileFromAtkUi(['name' => 'ALAL', 'tmp_name' => 'HEHFDF']);
         $m->save();
 
@@ -61,26 +61,26 @@ class FileRelationTraitTest extends TestCase
 
     public function testFilesAreDeletedOnModelDelete()
     {
-        $m = new ModelWithFileRelation($this->persistence);
+        $m = new ModelWithFileRelation($this->db);
         $m->save();
-        $this->createTestFile('somefile.jpg', $this->persistence, $m);
-        $this->createTestFile('someotherfile.jpg', $this->persistence, $m);
+        $this->createTestFile('somefile.jpg', $this->db, $m);
+        $this->createTestFile('someotherfile.jpg', $this->db, $m);
         self::assertEquals(
             2,
-            (new File($this->persistence))->action('count')->getOne()
+            (new File($this->db))->action('count')->getOne()
         );
 
         $m->delete();
 
         self::assertEquals(
             0,
-            (new File($this->persistence))->action('count')->getOne()
+            (new File($this->db))->action('count')->getOne()
         );
     }
 */
     public function testaddUploadFileFromAtkUi()
     {
-        $model = new ModelWithFileRelation($this->persistence, ['fileClassName' => UploadedFileMock::class]);
+        $model = new ModelWithFileRelation($this->db, ['fileClassName' => UploadedFileMock::class]);
         $model->save();
         self::assertTrue($model->hasRef(UploadedFileMock::class));
 
@@ -92,7 +92,7 @@ class FileRelationTraitTest extends TestCase
 
     public function testAddTypeToFile()
     {
-        $model = new ModelWithFileRelation($this->persistence, ['fileClassName' => UploadedFileMock::class]);
+        $model = new ModelWithFileRelation($this->db, ['fileClassName' => UploadedFileMock::class]);
         $model->save();
         $file = $model->addUploadFileFromAtkUi(['name' => 'testfile.txt', 'path' => 'tests/']);
         self::assertEquals('', $file->get('type'));
@@ -101,10 +101,4 @@ class FileRelationTraitTest extends TestCase
         self::assertEquals('SOMETYPE', $file->get('type'));
     }
 
-    public function testFileSeedIsUsed()
-    {
-        $model = new ModelWithFileRelation($this->persistence, ['fileClassName' => UploadedFileMock::class]);
-        self::assertTrue($model->hasRef(UploadedFileMock::class));
-        self::assertFalse($model->hasRef(File::class));
-    }
 }
