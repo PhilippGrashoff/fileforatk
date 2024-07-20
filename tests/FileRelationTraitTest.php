@@ -3,45 +3,23 @@
 namespace PhilippR\Atk4\File\Tests;
 
 
-use Atk4\Ui\App;
-use PhilippR\Atk4\File\File;
-use traitsforatkdata\TestCase;
-use PhilippR\Atk4\File\Tests\Testclasses\FileMock;
+use Atk4\Data\Persistence\Sql;
+use Atk4\Data\Schema\TestCase;
+use PhilippR\Atk4\File\Tests\Testclasses\File;
+use PhilippR\Atk4\File\Tests\Testclasses\UploadedFileMock;
 use PhilippR\Atk4\File\Tests\Testclasses\ModelWithFileRelation;
-use traitsforatkdata\UserException;
 
 
 class FileRelationTraitTest extends TestCase
 {
 
-    private $app;
-    private $persistence;
-
-    public static function setUpBeforeClass(): void
-    {
-        parent::setUpBeforeClass();
-        if (!defined('FILE_BASE_PATH')) {
-            define('FILE_BASE_PATH', dirname(__DIR__) . DIRECTORY_SEPARATOR);
-        }
-
-        if (!defined('SAVE_FILES_IN')) {
-            define('SAVE_FILES_IN', 'tests/filedir');
-        }
-    }
-
     public function setUp(): void
     {
         parent::setUp();
-        $this->app = new App(['always_run' => false]);
-        $this->persistence = $this->getSqliteTestPersistence();
-        $this->app->db = $this->persistence;
-        $this->persistence->app = $this->app;
+        $this->db = new Sql('sqlite::memory:');
+        $this->createMigrator(new File($this->db))->create();
+        $this->createMigrator(new ModelWithFileRelation($this->db))->create();
     }
-
-    protected $sqlitePersistenceModels = [
-        File::class,
-        ModelWithFileRelation::class
-    ];
 
     /*
     public function testAddUploadedFile()
@@ -102,19 +80,19 @@ class FileRelationTraitTest extends TestCase
 */
     public function testaddUploadFileFromAtkUi()
     {
-        $model = new ModelWithFileRelation($this->persistence, ['fileClassName' => FileMock::class]);
+        $model = new ModelWithFileRelation($this->persistence, ['fileClassName' => UploadedFileMock::class]);
         $model->save();
-        self::assertTrue($model->hasRef(FileMock::class));
+        self::assertTrue($model->hasRef(UploadedFileMock::class));
 
         $file = $model->addUploadFileFromAtkUi(['name' => 'testfile.txt', 'path' => 'tests/']);
 
         self::assertInstanceOf(File::class, $file);
-        self::assertEquals(1, $model->ref(FileMock::class)->action('count')->getOne());
+        self::assertEquals(1, $model->ref(UploadedFileMock::class)->action('count')->getOne());
     }
 
     public function testAddTypeToFile()
     {
-        $model = new ModelWithFileRelation($this->persistence, ['fileClassName' => FileMock::class]);
+        $model = new ModelWithFileRelation($this->persistence, ['fileClassName' => UploadedFileMock::class]);
         $model->save();
         $file = $model->addUploadFileFromAtkUi(['name' => 'testfile.txt', 'path' => 'tests/']);
         self::assertEquals('', $file->get('type'));
@@ -125,8 +103,8 @@ class FileRelationTraitTest extends TestCase
 
     public function testFileSeedIsUsed()
     {
-        $model = new ModelWithFileRelation($this->persistence, ['fileClassName' => FileMock::class]);
-        self::assertTrue($model->hasRef(FileMock::class));
+        $model = new ModelWithFileRelation($this->persistence, ['fileClassName' => UploadedFileMock::class]);
+        self::assertTrue($model->hasRef(UploadedFileMock::class));
         self::assertFalse($model->hasRef(File::class));
     }
 }

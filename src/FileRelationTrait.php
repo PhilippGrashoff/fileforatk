@@ -18,7 +18,7 @@ trait FileRelationTrait
      * @param bool $addDelete
      * @return HasMany
      * @throws \Atk4\Core\Exception
-     * @throws \Atk4\Data\Exception
+     * @throws Exception
      */
     protected function addFileReferenceAndDeleteHook(bool $addDelete = true): HasMany
     {

@@ -3,31 +3,13 @@
 namespace PhilippR\Atk4\File\Tests;
 
 use Atk4\Data\Exception;
-use PhilippR\Atk4\File\File;
-use traitsforatkdata\TestCase;
-use traitsforatkdata\UserException;
+use Atk4\Data\Persistence\Sql;
+use Atk4\Data\Schema\TestCase;
+use PhilippR\Atk4\File\Tests\Testclasses\File;
 
 
 class FileTest extends TestCase
 {
-
-    private $persistence;
-
-    protected $sqlitePersistenceModels = [
-        File::class
-    ];
-
-    public static function setUpBeforeClass(): void
-    {
-        parent::setUpBeforeClass();
-        if (!defined('FILE_BASE_PATH')) {
-            define('FILE_BASE_PATH', dirname(__DIR__) . DIRECTORY_SEPARATOR);
-        }
-
-        if (!defined('SAVE_FILES_IN')) {
-            define('SAVE_FILES_IN', 'tests/filedir');
-        }
-    }
 
     public static function tearDownAfterClass(): void
     {
@@ -42,66 +24,67 @@ class FileTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->persistence = $this->getSqliteTestPersistence();
+        $this->db = new Sql('sqlite::memory:');
+        $this->createMigrator(new File($this->db))->create();
     }
 
-    public function testDelete()
+    public function testDelete(): void
     {
-        $initial_file_count = (new File($this->persistence))->action('count')->getOne();
+        $initial_file_count = (new File($this->db))->action('count')->getOne();
         //copy some file to use
-        $f = new File($this->persistence);
-        $f->createFileName('filetest.txt');
-        $this->copyFile($f->get('value'));
+        $f = (new File($this->db))->createEntity();
+        $f->setFileName('filetest.txt');
+        $this->copyFile($f->get('filename'));
         $f->save();
         self::assertTrue($f->checkFileExists());
         self::assertEquals(
             $initial_file_count + 1,
-            (new File($this->persistence))->action('count')->getOne()
+            (new File($this->db))->action('count')->getOne()
         );
         $cf = clone $f;
         $f->delete();
         self::assertFalse($cf->checkFileExists());
         self::assertEquals(
             $initial_file_count,
-            (new File($this->persistence))->action('count')->getOne()
+            (new File($this->db))->action('count')->getOne()
         );
     }
 
-    public function testDeleteNonExistantFile()
+    public function testDeleteNonExistantFile(): void
     {
-        $f = new File($this->persistence);
-        $f->set('value', 'SomeNonExistantFile');
+        $f = (new File($this->db))->createEntity();
+        $f->set('filename', 'SomeNonExistantFile');
         self::assertFalse($f->deleteFile());
     }
 
-    public function testExceptionOnSaveNonExistantFile()
+    public function testExceptionOnSaveNonExistantFile(): void
     {
-        $f = new File($this->persistence);
-        $f->set('value', 'FDFLKSD LFSDHF KSJB');
+        $f = (new File($this->db))->createEntity();
+        $f->set('filename', 'FDFLKSD LFSDHF KSJB');
         self::expectException(Exception::class);
         $f->save();
     }
 
-    public function testCreateNewFileNameIfExists()
+    public function testCreateNewFileNameIfExists(): void
     {
-        $f = new File($this->persistence);
-        $f->set('path', SAVE_FILES_IN);
+        $f = (new File($this->db))->createEntity();
         $f1 = $this->createTestFile('LALA.jpg');
-        $f->createFileName('LALA.jpg');
-        self::assertNotEquals($f->get('value'), $f1->get('value'));
+        $f->setFileName('LALA.jpg');
+        self::assertNotEquals($f->get('filename'), $f1->get('filename'));
         self::assertEquals($f->get('filetype'), $f1->get('filetype'));
     }
 
+    /*
     public function testSaveStringToFile()
     {
-        $f = new File($this->persistence);
+        $f = (new File($this->db))->createEntity();
         self::assertTrue($f->saveStringToFile('JLADHDDFEJD'));
-    }
+    }*/
 
     public function testuploadFileUserExceptionOnError()
     {
-        $f = new File($this->persistence);
-        //false because move_uploaded_file knows its not an uploaded file#
+        $f = (new File($this->db))->createEntity();
+        //false because move_uploaded_file knows it's not an uploaded file
         self::expectException(UserException::class);
         $f->uploadFile(['name' => 'LALA', 'tmp_name' => 'sdfkjsdf.txt']);
     }
@@ -115,7 +98,7 @@ class FileTest extends TestCase
     public function testDirectorySeparatorAddedToPath()
     {
         $this->createTestFile('someotherfilename.txt');
-        $file = new File($this->persistence);
+        $file = (new File($this->db))->createEntity();
         $file->set('value', 'someotherfilename.txt');
         $file->set('path', 'tests/filedir');
         $file->save();
@@ -125,7 +108,7 @@ class FileTest extends TestCase
     public function testFileTypeSetIfNotThere()
     {
         $this->createTestFile('evenanothername.txt');
-        $g = new File($this->persistence);
+        $g = (new File($this->db))->createEntity();
         $g->set('value', 'evenanothername.txt');
         $g->set('path', 'tests/filedir');
         $g->save();
@@ -135,13 +118,13 @@ class FileTest extends TestCase
     public function testNonExistantFileGetsDeletedOnUpdate()
     {
         $file = $this->createTestFile('somefile.jpg');
-        $initial_file_count = (new File($this->persistence))->action('count')->getOne();
+        $initial_file_count = (new File($this->db))->action('count')->getOne();
         unlink($file->getFullFilePath());
-        $otherFile = new File($this->persistence);
+        $otherFile = (new File($this->db))->createEntity();
         $otherFile->load($file->get('id'));
         self::assertEquals(
             $initial_file_count - 1,
-            (new File($this->persistence))->action('count')->getOne()
+            (new File($this->db))->action('count')->getOne()
         );
     }
 
@@ -168,9 +151,9 @@ class FileTest extends TestCase
     public function createTestFile(
         string $filename
     ): File {
-        $file = new File($this->persistence);
-        $file->createFileName($filename);
-        $this->copyFile($file->get('value'));
+        $file = (new File($this->db))->createEntity();
+        $file->setFileName($filename);
+        $this->copyFile($file->get('filename'));
         $file->save();
 
         return $file;

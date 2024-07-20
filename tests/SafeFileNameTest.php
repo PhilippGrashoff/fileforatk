@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace PhilippR\Atk4\File\Tests;
 
+use Atk4\Core\Phpunit\TestCase;
 use PhilippR\Atk4\File\SafeFileName;
-use traitsforatkdata\TestCase;
 
 class SafeFileNameTest extends TestCase
 {
