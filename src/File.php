@@ -95,31 +95,10 @@ abstract class File extends SecondaryModel
         return false;
     }
 
-    protected function setFileName(string $name): void
-    {
-        $this->set('filename', SafeFileName::createSafeFileName($name));
-        $this->set('filetype', pathinfo($name, PATHINFO_EXTENSION));
-
-        $currentName = $this->get('filename');
-        $i = 1;
-        while (file_exists($this->getFullFilePath())) {
-            $this->set(
-                'filename',
-                pathinfo($currentName, PATHINFO_FILENAME) . '_' . $i .
-                ($this->get('filetype') ? '.' . $this->get('filetype') : '')
-            );
-            $i++;
-        }
-    }
-
     public function getFullFilePath(): string
     {
-        return $this->getBaseDir() . $this->get('relative_path') . $this->get('filename');
+        return FileController::getBaseDir() . $this->get('relative_path') . $this->get('filename');
     }
-
-    abstract public function getBaseDir(): string;
-
-    abstract public function getDefaultRelativePath(): string;
 
     public function checkFileExists(): bool
     {
@@ -129,74 +108,4 @@ abstract class File extends SecondaryModel
         );
     }
 
-    public function saveStringToFile(
-        string $stringToSave,
-        Model $parent,
-        string $fileName,
-        string $relativePath = '',
-        array $fieldValues = []
-    ): static {
-        $this->setParentEntity($parent);
-        $this->setRelativePath($relativePath);
-        $this->setFileName($fileName ?: 'UnnamedFile');
-        $this->setFieldValues($fieldValues);
-
-        $result = file_put_contents($this->getFullFilePath(), $stringToSave);
-        if ($result === false) {
-            throw new Exception('Unable to write to file: ' . $this->getFullFilePath());
-        }
-
-        $this->save();
-        return $this;
-    }
-
-    /**
-     * @param array $tempFileData
-     * @param Model $parent
-     * @param string $relativePath
-     * @param string $type
-     * @return File
-     * @throws Exception
-     * @throws \Atk4\Core\Exception
-     */
-    public function saveUploadFileFromAtkUi(
-        array $tempFileData,
-        Model $parent,
-        string $relativePath = '',
-        array $fieldValues = []
-    ): static {
-        $this->setParentEntity($parent);
-        $this->setRelativePath($relativePath);
-        $this->setFileName($tempFileData['name']);
-        $this->setFieldValues($fieldValues);
-
-        try {
-            move_uploaded_file($tempFileData['tmp_name'], $this->getFullFilePath());
-        } catch (\Throwable $e) {
-            throw new Exception('The file could not be uploaded.');
-        }
-
-        $this->save();
-        return $this;
-    }
-
-    protected function setFieldValues(array $fieldValues): void
-    {
-        foreach ($fieldValues as $fieldName => $value) {
-            $this->set($fieldName, $value);
-        }
-    }
-
-    protected function setRelativePath(string $relativePath): string
-    {
-        if (!$relativePath) {
-            $relativePath = $this->getDefaultRelativePath();
-        }
-        if (substr($relativePath, -1) !== DIRECTORY_SEPARATOR) {
-            $relativePath .= DIRECTORY_SEPARATOR;
-        }
-        $this->set('relative_path', $relativePath);
-
-        return (string)$this->get('relative_path');
-    }
 }

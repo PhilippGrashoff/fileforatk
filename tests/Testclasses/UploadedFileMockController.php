@@ -4,15 +4,15 @@ namespace PhilippR\Atk4\File\Tests\Testclasses;
 
 use Atk4\Data\Model;
 
-class UploadedFileMock extends File
+class UploadedFileMockController extends FileController
 {
 
-    public function saveUploadFileFromAtkUi(
+    public static function saveUploadFileFromAtkUi(
         array $tempFileData,
         Model $parent,
         string $relativePath = '',
         array $fieldValues = []
-    ): static {
+    ): File {
         try {
             parent::saveUploadFileFromAtkUi(
                 $tempFileData,
@@ -22,6 +22,6 @@ class UploadedFileMock extends File
             );
         } catch (\Throwable $e) {
         }
-        return $this;
+        return (new File($parent->getModel()->getPersistence()))->createEntity();
     }
 }
