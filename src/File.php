@@ -12,8 +12,9 @@ abstract class File extends SecondaryModel
 {
 
     use CryptIdTrait;
-
     public $table = 'file';
+
+    protected static $fileControllerClass = FileController::class;
 
     protected function init(): void
     {
@@ -97,7 +98,7 @@ abstract class File extends SecondaryModel
 
     public function getFullFilePath(): string
     {
-        return FileController::getBaseDir() . $this->get('relative_path') . $this->get('filename');
+        return static::$fileControllerClass::getBaseDir() . $this->get('relative_path') . $this->get('filename');
     }
 
     public function checkFileExists(): bool
