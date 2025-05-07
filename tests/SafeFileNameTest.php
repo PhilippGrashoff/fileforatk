@@ -28,7 +28,7 @@ class SafeFileNameTest extends TestCase
         );
     }
 
-    public function testcreateSafeFileName(): void
+    public function testCreateSafeFileName(): void
     {
         $res = SafeFileName::replaceSpecialChars('Änderung-02.jpg');
         self::assertSame(
