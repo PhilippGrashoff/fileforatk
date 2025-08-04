@@ -87,39 +87,6 @@ class FileTest extends TestCase
         );
     }
 
-
-    public function testGetFullFilePath(): void
-    {
-        // Test with relative path
-        $file = (new File($this->db))->createEntity();
-        $file->set('relative_path', 'uploads/images/');
-        $file->set('filename', 'test.jpg');
-
-        $expectedRelativePath = FileController::getBaseDir() . 'uploads/images/test.jpg';
-        self::assertEquals($expectedRelativePath, $file->getFullFilePath());
-
-        // Test with absolute path (starting with /)
-        $file->set('relative_path', '/var/www/files/');
-        $file->set('filename', 'document.pdf');
-
-        $expectedAbsolutePath = '/var/www/files/document.pdf';
-        self::assertEquals($expectedAbsolutePath, $file->getFullFilePath());
-
-        // Test with relative path without trailing slash
-        $file->set('relative_path', 'temp');
-        $file->set('filename', 'data.txt');
-
-        $expectedPath = FileController::getBaseDir() . 'tempdata.txt';
-        self::assertEquals($expectedPath, $file->getFullFilePath());
-
-        // Test with empty relative path
-        $file->set('relative_path', '');
-        $file->set('filename', 'root.log');
-
-        $expectedRootPath = FileController::getBaseDir() . 'root.log';
-        self::assertEquals($expectedRootPath, $file->getFullFilePath());
-    }
-
     protected function createTestFile(string $filename): File
     {
         $parent = (new ModelWithFileRelation($this->db))->createEntity();

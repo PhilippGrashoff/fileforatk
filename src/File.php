@@ -98,12 +98,7 @@ abstract class File extends SecondaryModel
 
     public function getFullFilePath(): string
     {
-        //relative path - detection will fail on windows
-        if(!str_starts_with($this->get('relative_path'), '/')) {
-            return static::$fileControllerClass::getBaseDir() . $this->get('relative_path') . $this->get('filename');
-        }
-        //absolute path
-        return $this->get('relative_path') . $this->get('filename');
+        return static::$fileControllerClass::getBaseDir() . $this->get('relative_path') . $this->get('filename');
     }
 
     public function checkFileExists(): bool
