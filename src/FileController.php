@@ -101,7 +101,7 @@ class FileController
         return (string)$file->get('relative_path');
     }
 
-    protected static function setFileName(File $file, string $name): void
+    public static function setFileName(File $file, string $name): void
     {
         $file->set('filename', SafeFileName::createSafeFileName($name));
         $file->set('filetype', pathinfo($name, PATHINFO_EXTENSION));
