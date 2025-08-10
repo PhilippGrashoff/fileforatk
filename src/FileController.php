@@ -93,7 +93,10 @@ class FileController
         if (!$relativePath) {
             $relativePath = static::getDefaultRelativePath();
         }
-        if (substr($relativePath, -1) !== DIRECTORY_SEPARATOR) {
+        if (
+            substr($relativePath, -1) !== DIRECTORY_SEPARATOR
+            && strlen($relativePath) > 0
+        ) {
             $relativePath .= DIRECTORY_SEPARATOR;
         }
         $file->set('relative_path', $relativePath);
