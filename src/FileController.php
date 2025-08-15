@@ -9,13 +9,13 @@ class FileController
 {
     public static string $fileClass = File::class;
 
-    public static function saveStringToFile(
-        string $stringToSave,
-        Model $parent,
+    public static function createFileEntityForFilename(
+        Model  $parent,
         string $fileName,
         string $relativePath = '',
-        array $fieldValues = []
-    ): File {
+        array  $fieldValues = []
+    ): File
+    {
         $parent->assertIsEntity();
         $file = (new static::$fileClass($parent->getModel()->getPersistence()))->createEntity();
         $file->setParentEntity($parent);
@@ -23,6 +23,18 @@ class FileController
         static::setFileName($file, $fileName ?: 'UnnamedFile');
         static::setFieldValues($file, $fieldValues);
 
+        return $file;
+    }
+
+    public static function saveStringToFile(
+        string $stringToSave,
+        Model  $parent,
+        string $fileName,
+        string $relativePath = '',
+        array  $fieldValues = []
+    ): File
+    {
+        $file = static::createFileEntityForFilename($parent, $fileName, $relativePath, $fieldValues);
         $result = file_put_contents($file->getFullFilePath(), $stringToSave);
         if ($result === false) {
             throw new Exception('Unable to write to file: ' . $file->getFullFilePath());
@@ -34,9 +46,10 @@ class FileController
 
     public static function createFileEntityForExistingFile(
         string $pathToFile,
-        Model $parent,
-        array $fieldValues = []
-    ): File {
+        Model  $parent,
+        array  $fieldValues = []
+    ): File
+    {
         $parent->assertIsEntity();
         $file = (new static::$fileClass($parent->getModel()->getPersistence()))->createEntity();
         $file->setParentEntity($parent);
@@ -59,18 +72,13 @@ class FileController
      * @throws \Throwable
      */
     public static function saveUploadFileFromAtkUi(
-        array $tempFileData,
-        Model $parent,
+        array  $tempFileData,
+        Model  $parent,
         string $relativePath = '',
-        array $fieldValues = []
-    ): File {
-        $parent->assertIsEntity();
-        $file = (new static::$fileClass($parent->getModel()->getPersistence()))->createEntity();
-        $file->setParentEntity($parent);
-        static::setRelativePath($file, $relativePath);
-        static::setFileName($file, $tempFileData['name']);
-        static::setFieldValues($file, $fieldValues);
-
+        array  $fieldValues = []
+    ): File
+    {
+        $file = static::createFileEntityForFilename($parent, $tempFileData['name'], $relativePath, $fieldValues);
         try {
             move_uploaded_file($tempFileData['tmp_name'], $file->getFullFilePath());
         } catch (\Throwable $e) {
